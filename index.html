@@ -198,6 +198,8 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    position: absolute;
+    inset: 0;
   }
   .ep-thumb .thumb-placeholder {
     display: flex;
@@ -545,13 +547,17 @@ function buildGrids() {
 
     card.innerHTML = `
       <div class="ep-thumb">
-        <!-- 썸네일 이미지를 여기에 추가하세요: <img src="images/ep${String(ep.ep).padStart(2,'0')}.jpg" alt="${ep.en}"> -->
-        <div class="thumb-placeholder">
+        <img
+          src="https://img.youtube.com/vi/${ep.yt}/mqdefault.jpg"
+          alt="${ep.en}"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        >
+        <div class="thumb-placeholder" style="display:none;">
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="4" y="10" width="40" height="28" rx="6" stroke="currentColor" stroke-width="2.5"/>
             <path d="M20 18l10 6-10 6V18z" fill="currentColor"/>
           </svg>
-          <span>이미지 추가</span>
+          <span>이미지 없음</span>
         </div>
         <div class="ep-badge">EP ${ep.ep}</div>
         <div class="play-overlay">
