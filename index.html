@@ -585,13 +585,32 @@ function showDVD(num, btn) {
   btn.classList.add('active');
 }
 
-// Open in YouTube Kids app
+// Video modal
 function openVideo(ep) {
-  window.location.href = `https://www.youtube.com/watch?v=${ep.yt}`;
+  const overlay = document.getElementById('videoOverlay');
+  const iframe  = document.getElementById('modalIframe');
+
+  document.getElementById('modalEpNum').textContent   = `Season 1 · Episode ${ep.ep}`;
+  document.getElementById('modalTitleEn').textContent = ep.en;
+  document.getElementById('modalTitleKo').textContent = ep.ko;
+
+  iframe.src = `https://www.youtube-nocookie.com/embed/${ep.yt}?autoplay=1&rel=0`;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
-function closeVideo() {}
-function handleOverlayClick() {}
+function closeVideo() {
+  const overlay = document.getElementById('videoOverlay');
+  const iframe  = document.getElementById('modalIframe');
+  overlay.classList.remove('open');
+  iframe.src = '';
+  document.body.style.overflow = '';
+}
+
+// Close on overlay click (outside modal)
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('videoOverlay')) closeVideo();
+}
 
 // Close on Escape key
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
