@@ -335,6 +335,15 @@
     aspect-ratio: 16/9;
     display: block;
     border: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .modal-video iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
   }
   .modal-info {
     padding: 16px 20px 20px;
@@ -464,7 +473,9 @@
     <button class="modal-close" onclick="closeVideo()" aria-label="닫기">
       <svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <iframe id="modalIframe" class="modal-video" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+    <div class="modal-video">
+      <div id="modalPlayer"></div>
+    </div>
     <div class="modal-info">
       <div class="modal-pig">🐷</div>
       <div class="modal-meta">
@@ -476,6 +487,7 @@
   </div>
 </div>
 
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
 const episodes = [
   // DVD 1
@@ -585,26 +597,69 @@ function showDVD(num, btn) {
   btn.classList.add('active');
 }
 
-// Video modal
+// Video modal (via YouTube IFrame Player API so we can control playback speed)
+const DEFAULT_SPEED = 0.7;
+let ytPlayer = null;
+let ytApiReady = false;
+let pendingEp = null;
+
+function onYouTubeIframeAPIReady() {
+  ytApiReady = true;
+  if (pendingEp) {
+    startPlayer(pendingEp);
+    pendingEp = null;
+  }
+}
+
+function startPlayer(ep) {
+  if (ytPlayer) {
+    ytPlayer.loadVideoById(ep.yt);
+    ytPlayer.setPlaybackRate(DEFAULT_SPEED);
+    return;
+  }
+  ytPlayer = new YT.Player('modalPlayer', {
+    videoId: ep.yt,
+    host: 'https://www.youtube-nocookie.com',
+    playerVars: { autoplay: 1, rel: 0 },
+    events: {
+      onReady: function(e) {
+        e.target.setPlaybackRate(DEFAULT_SPEED);
+        e.target.playVideo();
+      },
+      onStateChange: function(e) {
+        // Some browsers reset the rate once playback actually starts, so re-apply it.
+        if (e.data === YT.PlayerState.PLAYING) {
+          e.target.setPlaybackRate(DEFAULT_SPEED);
+        }
+      }
+    }
+  });
+}
+
 function openVideo(ep) {
   const overlay = document.getElementById('videoOverlay');
-  const iframe  = document.getElementById('modalIframe');
 
   document.getElementById('modalEpNum').textContent   = `Season 1 · Episode ${ep.ep}`;
   document.getElementById('modalTitleEn').textContent = ep.en;
   document.getElementById('modalTitleKo').textContent = ep.ko;
 
-  iframe.src = `https://www.youtube-nocookie.com/embed/${ep.yt}?autoplay=1&rel=0`;
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  if (ytApiReady) {
+    startPlayer(ep);
+  } else {
+    pendingEp = ep; // API script hasn't finished loading yet
+  }
 }
 
 function closeVideo() {
   const overlay = document.getElementById('videoOverlay');
-  const iframe  = document.getElementById('modalIframe');
   overlay.classList.remove('open');
-  iframe.src = '';
   document.body.style.overflow = '';
+  if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+    ytPlayer.stopVideo();
+  }
 }
 
 // Close on overlay click (outside modal)
